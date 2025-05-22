@@ -1,29 +1,45 @@
 console.log("connected to api.js");
 
-const loadData = async () => {
-    try {
-        const response = await fetch("https://openapi.programming-hero.com/api/retro-forum/posts");
-        if (!response.ok) throw new Error("Failed to fetch data");
-        const data = await response.json();
-        const posts = data.posts;
+const loadData = async (query = "") => {
+    const loadingSpinner = document.getElementById("loading-spinner");
+    const notFoundMessage = document.getElementById("not-found-message");
+    loadingSpinner.classList.remove("hidden"); // Show spinner
+    notFoundMessage.classList.add("hidden");   // Hide "not found" by default
 
-        renderCards(posts);
-        
-    } catch (error) {
-        console.error("Error loading data:", error);
-    }
+    // Wait 2 seconds before starting data fetch
+    setTimeout(async () => {
+        try {
+            const response = await fetch(`https://openapi.programming-hero.com/api/retro-forum/posts${query}`);
+            if (!response.ok) throw new Error("Failed to fetch data");
+
+            const data = await response.json();
+            const posts = data.posts;
+            
+            if (!posts || posts.length === 0) {
+                notFoundMessage.classList.remove("hidden"); // Show "no data" message
+            }
+
+
+            renderCards(posts);
+        } catch (error) {
+            console.error("Error loading data:", error);
+        } finally {
+            loadingSpinner.classList.add("hidden"); // Hide spinner after fetch
+        }
+    }, 2000); // 2 second delay before fetching
 };
 
 const renderCards = (posts) => {
     const cardContainer = document.getElementById("card-container");
-
     const titleContainer = document.getElementById("title-list");
     const markAsRead = document.getElementById("mark-id");
-
     if (!cardContainer) {
         console.error("card-container not found");
         return;
     }
+
+     // ✅ Clear previous cards
+    cardContainer.innerHTML = "";
 
     posts.forEach(post => {
         const cardDiv = document.createElement("div");
@@ -104,14 +120,9 @@ const renderCards = (posts) => {
     );
     if (existing) return; // Do not add again
 
-
         const currentCount = parseInt(markAsRead.innerText, 10);
     markAsRead.innerText = currentCount + 1;
-
-
-            // Create a new mini card
-
-
+         // Create a new mini card
             const miniCard = document.createElement('div');
             miniCard.className = "bg-white rounded-lg p-4 shadow flex justify-between items-center";
             miniCard.innerHTML =`
@@ -126,86 +137,82 @@ const renderCards = (posts) => {
             `;
 
             titleContainer.appendChild(miniCard);
-
-
-            
-
-
-
         })
 
         cardContainer.appendChild(cardDiv);
     });
     latestPosts();
 };
-// Call the loadData function to fetch and display the posts
-loadData();
-
-
-
 const latestPosts = async () => {
     const latestPostsData = await fetch("https://openapi.programming-hero.com/api/retro-forum/latest-posts");
-const  posts = await latestPostsData.json();
-
-
-posts.forEach(post => {
-    console.log(post);
-    const latestPostContainer = document.getElementById("latest-post-container");
-
-    const latestPostDiv = document.createElement("div");
-    latestPostDiv.className = 'card w-80 border border-[#12132D26] p-6 rounded-3xl';
-    latestPostDiv.innerHTML =`
-    <figure class="bg-gray-100 h-40 w-full flex items-center justify-center rounded-2xl">
-    <img src="${post.cover_image}" alt="">
-  </figure>
-  <div class="card-body">
-    <div class="text-sm text-gray-500 flex items-center gap-1">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-  <g clip-path="url(#clip0_29_1881)">
-    <path d="M4 7C4 6.46957 4.21071 5.96086 4.58579 5.58579C4.96086 5.21071 5.46957 5 6 5H18C18.5304 5 19.0391 5.21071 19.4142 5.58579C19.7893 5.96086 20 6.46957 20 7V19C20 19.5304 19.7893 20.0391 19.4142 20.4142C19.0391 20.7893 18.5304 21 18 21H6C5.46957 21 4.96086 20.7893 4.58579 20.4142C4.21071 20.0391 4 19.5304 4 19V7Z" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M16 3V7" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M8 3V7" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M4 11H20" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M11 16C11 16.2652 11.1054 16.5196 11.2929 16.7071C11.4804 16.8946 11.7348 17 12 17C12.2652 17 12.5196 16.8946 12.7071 16.7071C12.8946 16.5196 13 16.2652 13 16C13 15.7348 12.8946 15.4804 12.7071 15.2929C12.5196 15.1054 12.2652 15 12 15C11.7348 15 11.4804 15.1054 11.2929 15.2929C11.1054 15.4804 11 15.7348 11 16Z" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-  <defs>
-    <clipPath id="clip0_29_1881">
-      <rect width="24" height="24" fill="white"/>
-    </clipPath>
-  </defs>
-</svg>
-      <span>${post.author?.posted_date || "No publish date"}</span>
-     
-    </div>
-
-    <h2 class="card-title text-lg leading-snug">
-      ${post.title}
-    </h2>
-    <p class="text-sm text-gray-600">
-      ${post.description}
-    </p>
-
-    <div class="flex items-center gap-3 mt-4">
-      <div class="avatar">
-        <div class="w-10 h-10 rounded-full">
-
-        <img src="${post.profile_image}" alt="">
-         
+    const  posts = await latestPostsData.json();
+    
+    
+    posts.slice(0, 3).forEach(post => {
+        console.log(post);
+        const latestPostContainer = document.getElementById("latest-post-container");
+        
+        const latestPostDiv = document.createElement("div");
+        latestPostDiv.className = 'card w-80 border border-[#12132D26] p-6 rounded-3xl';
+        latestPostDiv.innerHTML =`
+        <figure class="bg-gray-100 h-40 w-full flex items-center justify-center rounded-2xl">
+        <img src="${post.cover_image}" alt="">
+        </figure>
+        <div class="card-body">
+        <div class="text-sm text-gray-500 flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <g clip-path="url(#clip0_29_1881)">
+        <path d="M4 7C4 6.46957 4.21071 5.96086 4.58579 5.58579C4.96086 5.21071 5.46957 5 6 5H18C18.5304 5 19.0391 5.21071 19.4142 5.58579C19.7893 5.96086 20 6.46957 20 7V19C20 19.5304 19.7893 20.0391 19.4142 20.4142C19.0391 20.7893 18.5304 21 18 21H6C5.46957 21 4.96086 20.7893 4.58579 20.4142C4.21071 20.0391 4 19.5304 4 19V7Z" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16 3V7" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 3V7" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 11H20" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11 16C11 16.2652 11.1054 16.5196 11.2929 16.7071C11.4804 16.8946 11.7348 17 12 17C12.2652 17 12.5196 16.8946 12.7071 16.7071C12.8946 16.5196 13 16.2652 13 16C13 15.7348 12.8946 15.4804 12.7071 15.2929C12.5196 15.1054 12.2652 15 12 15C11.7348 15 11.4804 15.1054 11.2929 15.2929C11.1054 15.4804 11 15.7348 11 16Z" stroke="#12132D" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <defs>
+        <clipPath id="clip0_29_1881">
+        <rect width="24" height="24" fill="white"/>
+        </clipPath>
+        </defs>
+        </svg>
+        <span>${post.author?.posted_date || "No publish date"}</span>
+        
         </div>
-      </div>
-      <div>
+        
+        <h2 class="card-title text-lg leading-snug">
+        ${post.title}
+        </h2>
+        <p class="text-sm text-gray-600">
+        ${post.description}
+        </p>
+        
+        <div class="flex items-center gap-3 mt-4">
+        <div class="avatar">
+        <div class="w-10 h-10 rounded-full">
+        
+        <img src="${post.profile_image}" alt="">
+        
+        </div>
+        </div>
+        <div>
         <p class="font-medium text-gray-800 leading-none">${post.author.name}</p>
-       <p class="text-xs text-gray-500">${post.author?.designation || "Unknown"}</p>
-      </div>
-    </div>
-  </div>
-    `
-
-    latestPostContainer.appendChild(latestPostDiv);
-})
-
+        <p class="text-xs text-gray-500">${post.author?.designation || "Unknown"}</p>
+        </div>
+        </div>
+        </div>
+        `
+        
+        latestPostContainer.appendChild(latestPostDiv);
+    })
+    
 }
 
+
+const handleSearch = () => {
+    const value = document.getElementById("search-box").value;
+        loadData(`?category=${value}`);
+    console.log(value);
+}
+loadData("");
 
 
 
